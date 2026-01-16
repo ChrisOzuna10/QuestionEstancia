@@ -1,38 +1,87 @@
-import { FileSpreadsheet, TrendingUp, Users, BarChart3 } from 'lucide-react'
+import { FileSpreadsheet, TrendingUp, Users, BarChart3, Loader2 } from 'lucide-react'
+import { useEffect, useState } from 'react'
+import { getAllSurveys, getAllAnswers, getAllFiles, type Survey } from '@/services/overview.service'
 
 function Overview() {
+  const [surveys, setSurveys] = useState<Survey[]>([])
+  const [totalAnswers, setTotalAnswers] = useState(0)
+  const [totalFiles, setTotalFiles] = useState(0)
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
+
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        setLoading(true)
+        setError(null)
+        
+        const [surveysData, answersData, filesData] = await Promise.all([
+          getAllSurveys(),
+          getAllAnswers(),
+          getAllFiles()
+        ])
+        
+        setSurveys(surveysData)
+        setTotalAnswers(answersData.total)
+        setTotalFiles(filesData.total)
+      } catch (err) {
+        console.error('Error fetching overview data:', err)
+        setError('Error al cargar los datos')
+      } finally {
+        setLoading(false)
+      }
+    }
+
+    fetchData()
+  }, [])
+
+  // Calcular estadísticas
+  const totalSurveys = surveys.length
+  const activeSurveys = surveys.filter(s => s.isActive).length
+  
+  // Obtener las 4 encuestas más recientes
+  const recentSurveys = [...surveys]
+    .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
+    .slice(0, 4)
+
+  // Función para formatear fecha relativa
+  const getRelativeDate = (dateString: string) => {
+    const date = new Date(dateString)
+    const now = new Date()
+    const diffTime = Math.abs(now.getTime() - date.getTime())
+    const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24))
+    
+    if (diffDays === 0) return 'Hoy'
+    if (diffDays === 1) return 'Ayer'
+    if (diffDays < 7) return `Hace ${diffDays} días`
+    return date.toLocaleDateString('es-ES', { day: 'numeric', month: 'short' })
+  }
+
   const stats = [
     {
       title: "Total Encuestas",
-      value: "24",
+      value: totalSurveys.toString(),
       icon: BarChart3,
-      change: "+12%",
-      changeType: "positive",
+      change: activeSurveys > 0 ? `${activeSurveys} activas` : "Sin cambios",
+      changeType: activeSurveys > 0 ? "positive" : "neutral",
       color: "blue"
     },
     {
       title: "Respuestas",
-      value: "156",
+      value: totalAnswers.toString(),
       icon: Users,
-      change: "+23%",
-      changeType: "positive",
+      change: totalAnswers > 0 ? `${Math.round(totalAnswers / Math.max(totalSurveys, 1))} promedio` : "+0%",
+      changeType: totalAnswers > 0 ? "positive" : "neutral",
       color: "green"
     },
     {
       title: "Archivos",
-      value: "12",
+      value: totalFiles.toString(),
       icon: FileSpreadsheet,
-      change: "+3",
-      changeType: "neutral",
+      change: totalFiles > 0 ? `${totalFiles} total` : "+0",
+      changeType: totalFiles > 0 ? "positive" : "neutral",
       color: "purple"
     }
-  ]
-
-  const recentSurveys = [
-    { name: "Encuesta de Satisfacción Cliente", responses: 45, date: "Hoy" },
-    { name: "Feedback Producto 2024", responses: 32, date: "Ayer" },
-    { name: "Evaluación de Servicio", responses: 28, date: "Hace 2 días" },
-    { name: "Opinión Marketing", responses: 51, date: "Hace 3 días" }
   ]
 
   const getColorClasses = (color: string) => {
@@ -42,6 +91,22 @@ function Overview() {
       purple: "bg-purple-100 text-purple-600"
     }
     return colors[color as keyof typeof colors]
+  }
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <Loader2 className="w-8 h-8 animate-spin text-blue-600" />
+      </div>
+    )
+  }
+
+  if (error) {
+    return (
+      <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg">
+        {error}
+      </div>
+    )
   }
 
   return (
@@ -82,18 +147,22 @@ function Overview() {
             <TrendingUp className="w-5 h-5 text-gray-400" />
           </div>
           <div className="space-y-3">
-            {recentSurveys.map((survey, index) => (
-              <div key={index} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors">
-                <div className="flex-1">
-                  <p className="font-medium text-gray-800 text-sm">{survey.name}</p>
-                  <p className="text-xs text-gray-500 mt-1">{survey.date}</p>
+            {recentSurveys.length > 0 ? (
+              recentSurveys.map((survey) => (
+                <div key={survey.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors">
+                  <div className="flex-1">
+                    <p className="font-medium text-gray-800 text-sm">{survey.nameSurvey}</p>
+                    <p className="text-xs text-gray-500 mt-1">{getRelativeDate(survey.createdAt)}</p>
+                  </div>
+                  <div className="text-right">
+                    <p className="text-sm font-semibold text-gray-800">0</p>
+                    <p className="text-xs text-gray-500">respuestas</p>
+                  </div>
                 </div>
-                <div className="text-right">
-                  <p className="text-sm font-semibold text-gray-800">{survey.responses}</p>
-                  <p className="text-xs text-gray-500">respuestas</p>
-                </div>
-              </div>
-            ))}
+              ))
+            ) : (
+              <p className="text-gray-500 text-sm text-center py-4">No hay encuestas recientes</p>
+            )}
           </div>
         </div>
 

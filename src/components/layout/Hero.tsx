@@ -151,12 +151,12 @@ function Hero() {
 
             <Link
               ref={buttonRef}
-              to="/dashboard"
+              to="/login"
               onMouseEnter={handleButtonHover}
               onMouseLeave={handleButtonLeave}
               className="inline-block bg-blue-600 text-white px-10 py-5 rounded-lg hover:bg-blue-700 transition-colors font-semibold text-xl"
             >
-              Ir al Dashboard
+              Ir al Login
             </Link>
           </div>
 

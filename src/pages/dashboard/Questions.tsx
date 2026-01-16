@@ -1,6 +1,8 @@
 import { useParams, useNavigate } from 'react-router-dom'
 import { useState, useEffect } from 'react'
 import { Plus, Trash2, GripVertical, ArrowLeft } from 'lucide-react'
+import { getQuestionsBySurvey, createQuestion } from '@/services/question.service'
+import { getSurveys } from '@/services/surveys.service'
 
 type QuestionType = 'text' | 'multiple' | 'checkbox' | 'radio' | 'scale'
 
@@ -32,6 +34,8 @@ function Questions() {
       options: []
     }
   ])
+  const [loading, setLoading] = useState(false)
+  const [loadingQuestions, setLoadingQuestions] = useState(true)
 
   const questionTypes = [
     { value: 'text', label: 'Respuesta Abierta' },
@@ -41,13 +45,51 @@ function Questions() {
     { value: 'scale', label: 'Escala (1-5)' }
   ]
 
+  // Cargar información de la encuesta y sus preguntas
   useEffect(() => {
-    const titleFromSlug = slug?.split('-').map(word => 
-      word.charAt(0).toUpperCase() + word.slice(1)
-    ).join(' ')
-    
-    setSurveyTitle(titleFromSlug || 'Nueva Encuesta')
-  }, [slug])
+    const loadSurveyData = async () => {
+      if (!id) return
+
+      try {
+        setLoadingQuestions(true)
+        
+        // Cargar datos de la encuesta
+        const surveys = await getSurveys()
+        const currentSurvey = surveys.find(s => s.id === parseInt(id))
+        
+        if (currentSurvey) {
+          setSurveyTitle(currentSurvey.title)
+          setSurveyDescription(currentSurvey.description)
+        } else {
+          // Si no encuentra la encuesta, usar el slug
+          const titleFromSlug = slug?.split('-').map(word => 
+            word.charAt(0).toUpperCase() + word.slice(1)
+          ).join(' ')
+          setSurveyTitle(titleFromSlug || 'Nueva Encuesta')
+        }
+
+        // Cargar preguntas existentes
+        const existingQuestions = await getQuestionsBySurvey(parseInt(id))
+        
+        if (existingQuestions.length > 0) {
+          const formattedQuestions = existingQuestions.map(q => ({
+            id: q.id.toString(),
+            type: q.questionType as QuestionType,
+            text: q.questionText,
+            required: q.isRequired,
+            options: []
+          }))
+          setQuestions(formattedQuestions)
+        }
+      } catch (error) {
+        console.error('Error loading survey data:', error)
+      } finally {
+        setLoadingQuestions(false)
+      }
+    }
+
+    loadSurveyData()
+  }, [id, slug])
 
   const addQuestion = () => {
     const newQuestion: Question = {
@@ -114,7 +156,7 @@ function Questions() {
     return ['multiple', 'checkbox', 'radio'].includes(type)
   }
 
-  const handleSave = () => {
+  const handleSave = async () => {
     if (!surveyTitle.trim()) {
       alert('Por favor ingresa un título para la encuesta')
       return
@@ -126,29 +168,48 @@ function Questions() {
       return
     }
 
-    const surveyData = {
-      id: id,
-      title: surveyTitle,
-      description: surveyDescription,
-      questions: questions.map((q, index) => ({
-        question_text: q.text,
-        question_type: q.type,
-        is_required: q.required,
-        order_position: index + 1,
-        options: q.options.map((opt, optIndex) => ({
-          option_text: opt.text,
-          order_position: optIndex + 1
-        }))
-      }))
+    if (!id) {
+      alert('Error: No se encontró el ID de la encuesta')
+      return
     }
 
-    console.log('Encuesta guardada:', surveyData)
-    alert('Encuesta guardada exitosamente! (simulado)')
-    navigate('/dashboard/surveys')
+    try {
+      setLoading(true)
+      
+      // Guardar cada pregunta en el backend
+      for (let index = 0; index < questions.length; index++) {
+        const q = questions[index]
+        
+        await createQuestion({
+          surveyId: parseInt(id),
+          questionText: q.text,
+          questionType: q.type,
+          isRequired: q.required,
+          orderPosition: index + 1
+        })
+      }
+
+      alert('Preguntas guardadas exitosamente!')
+      navigate('/dashboard/surveys')
+    } catch (error) {
+      console.error('Error saving questions:', error)
+      alert('Error al guardar las preguntas. Por favor intenta de nuevo.')
+    } finally {
+      setLoading(false)
+    }
   }
 
   const handleBack = () => {
     navigate('/dashboard/surveys')
+  }
+
+  if (loadingQuestions) {
+    return (
+      <div className="flex items-center justify-center py-16">
+        <div className="inline-block animate-spin rounded-full h-12 w-12 border-4 border-gray-300 border-t-black"></div>
+        <p className="text-gray-600 mt-4 ml-4">Cargando preguntas...</p>
+      </div>
+    )
   }
 
   return (
@@ -157,6 +218,7 @@ function Questions() {
         <button
           onClick={handleBack}
           className="p-2 hover:bg-gray-100 cursor-pointer rounded-lg transition-colors"
+          disabled={loading}
         >
           <ArrowLeft className="w-6 h-6 text-gray-600" />
         </button>
@@ -167,6 +229,7 @@ function Questions() {
             onChange={(e) => setSurveyTitle(e.target.value)}
             placeholder="Título de la encuesta"
             className="text-3xl font-bold text-gray-800 border-none outline-none w-full focus:ring-0 bg-transparent"
+            disabled
           />
           <input
             type="text"
@@ -174,13 +237,15 @@ function Questions() {
             onChange={(e) => setSurveyDescription(e.target.value)}
             placeholder="Descripción (opcional)"
             className="text-gray-600 mt-1 border-none outline-none w-full focus:ring-0 bg-transparent"
+            disabled
           />
         </div>
         <button 
           onClick={handleSave}
-          className="px-6 py-3 bg-black text-white rounded-lg hover:bg-gray-800 transition-colors font-medium"
+          className="px-6 py-3 bg-black text-white rounded-lg hover:bg-gray-800 transition-colors font-medium disabled:bg-gray-400 disabled:cursor-not-allowed"
+          disabled={loading}
         >
-          Guardar Encuesta
+          {loading ? 'Guardando...' : 'Guardar Preguntas'}
         </button>
       </div>
 
@@ -267,6 +332,7 @@ function Questions() {
                       {[1, 2, 3, 4, 5].map(num => (
                         <button
                           key={num}
+                          type="button"
                           className="w-12 h-12 border-2 border-gray-300 rounded-lg hover:border-black hover:bg-gray-50 transition-colors font-medium"
                         >
                           {num}

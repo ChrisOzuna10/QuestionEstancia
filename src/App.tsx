@@ -9,26 +9,32 @@ import Questions from './pages/dashboard/Questions'
 import Ansiedad from './pages/dashboard/Ansiedad'
 import Depresion from './pages/dashboard/Depresion'
 import ViewFiles from './pages/dashboard/ViewFiles'
+import Login from './pages/Login'
+import PrivateRoute from './midlewares/PrivateRoute'
 
 function App() {
   return (
     <Routes>
       <Route path="/" element={<Home />} />
-      
-      <Route path="/dashboard" element={<DashboardLayout />}>
-        <Route index element={<Navigate to="/dashboard/overview" replace />} />
-        <Route path="overview" element={<Overview />} />
-        <Route path="surveys" element={<Surveys />} />
-        <Route path="upload" element={<UploadFiles />} />
-        <Route path="settings" element={<Settings />} />
-        <Route path='files' element={< ViewFiles />} />
-        <Route path='surveys/:id/:slug/questions' element={<Questions />} />
-        <Route path="indicadores/ansiedad" element={<Ansiedad />} />
-        <Route path="indicadores/depresion" element={<Depresion />} />
-        <Route path="indicadores/estres" element={<div className="text-2xl font-bold">Estres</div>} />
-        <Route path="indicadores/conductual" element={<div className="text-2xl font-bold">Conductual</div>} />
-        <Route path="indicadores/somatizacion" element={<div className="text-2xl font-bold">Somatizacion</div>} />
-        <Route path="indicadores/tdah" element={<div className="text-2xl font-bold">TDAH</div>} />
+      <Route path="/login" element={<Login />} />
+
+      {/* Dashboard protegido */}
+      <Route element={<PrivateRoute />}>
+        <Route path="/dashboard" element={<DashboardLayout />}>
+          <Route index element={<Navigate to="/dashboard/overview" replace />} />
+          <Route path="overview" element={<Overview />} />
+          <Route path="surveys" element={<Surveys />} />
+          <Route path="upload" element={<UploadFiles />} />
+          <Route path="settings" element={<Settings />} />
+          <Route path="files" element={<ViewFiles />} />
+          <Route path="surveys/:id/:slug/questions" element={<Questions />} />
+          <Route path="indicadores/ansiedad" element={<Ansiedad />} />
+          <Route path="indicadores/depresion" element={<Depresion />} />
+          <Route path="indicadores/estres" element={<div className="text-2xl font-bold">Estres</div>} />
+          <Route path="indicadores/conductual" element={<div className="text-2xl font-bold">Conductual</div>} />
+          <Route path="indicadores/somatizacion" element={<div className="text-2xl font-bold">Somatizacion</div>} />
+          <Route path="indicadores/tdah" element={<div className="text-2xl font-bold">TDAH</div>} />
+        </Route>
       </Route>
 
       <Route path="*" element={<Navigate to="/" replace />} />

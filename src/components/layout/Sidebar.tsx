@@ -18,6 +18,7 @@ function Sidebar() {
   const headerRef = useRef<HTMLDivElement>(null)
   const footerRef = useRef<HTMLDivElement>(null)
   const [isIndicadoresOpen, setIsIndicadoresOpen] = useState(false)
+  const [user, setUser] = useState<{ name?: string; role?: string }>({})
 
   const navItems = [
     { path: '/', label: 'Home', icon: Home },
@@ -38,6 +39,12 @@ function Sidebar() {
   ]
 
   useEffect(() => {
+    // Cargar usuario del localStorage
+    const storedUser = localStorage.getItem("user")
+    if (storedUser) {
+      setUser(JSON.parse(storedUser))
+    }
+
     const ctx = gsap.context(() => {
       gsap.from(sidebarRef.current, {
         x: -100,
@@ -171,11 +178,15 @@ function Sidebar() {
       >
         <div className="flex items-center gap-3 px-4 py-3">
           <div className="w-8 h-8 bg-blue-500 rounded-full flex items-center justify-center text-white font-bold">
-            A
+            {user.name ? user.name.charAt(0).toUpperCase() : "A"}
           </div>
           <div>
-            <p className="text-sm font-medium text-gray-900">Admin</p>
-            <p className="text-xs text-gray-500">Administrador</p>
+            <p className="text-sm font-medium text-gray-900">
+              {user.name || "Usuario"}
+            </p>
+            <p className="text-xs text-gray-500">
+              {user.role || "Rol "}
+            </p>
           </div>
         </div>
       </div>
