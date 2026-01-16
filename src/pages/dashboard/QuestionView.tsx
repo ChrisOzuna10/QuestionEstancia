@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
-import { useNavigate, useParams } from "react-router-dom";
-import { FileCheck, Plus, Trash2, Edit, ArrowLeft } from "lucide-react";
+import { useParams } from "react-router-dom";
+import { FileCheck, Plus, Trash2, Edit } from "lucide-react";
 
 interface QuestionOption {
   option_id: number;
@@ -26,10 +26,8 @@ interface QuestionsResponse {
 }
 
 const QuestionView = () => {
-  const navigate = useNavigate();
   const { surveyId } = useParams();
   const [questions, setQuestions] = useState<Question[]>([]);
-  const [total, setTotal] = useState(0);
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
@@ -104,7 +102,6 @@ const QuestionView = () => {
           total: 5
         };
         setQuestions(mockData.questions);
-        setTotal(mockData.total);
       } catch (error) {
         console.error("Error al cargar preguntas:", error);
       } finally {
