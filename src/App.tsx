@@ -11,6 +11,7 @@ import Depresion from './pages/dashboard/Depresion'
 import ViewFiles from './pages/dashboard/ViewFiles'
 import Login from './pages/Login'
 import PrivateRoute from './midlewares/PrivateRoute'
+import QuestionView from './pages/dashboard/QuestionView'
 
 function App() {
   return (
@@ -34,6 +35,7 @@ function App() {
           <Route path="indicadores/conductual" element={<div className="text-2xl font-bold">Conductual</div>} />
           <Route path="indicadores/somatizacion" element={<div className="text-2xl font-bold">Somatizacion</div>} />
           <Route path="indicadores/tdah" element={<div className="text-2xl font-bold">TDAH</div>} />
+          <Route path="questions" element={<QuestionView />}/>
         </Route>
       </Route>
 

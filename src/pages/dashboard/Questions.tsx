@@ -45,7 +45,6 @@ function Questions() {
     { value: 'scale', label: 'Escala (1-5)' }
   ]
 
-  // Cargar información de la encuesta y sus preguntas
   useEffect(() => {
     const loadSurveyData = async () => {
       if (!id) return
@@ -53,7 +52,6 @@ function Questions() {
       try {
         setLoadingQuestions(true)
         
-        // Cargar datos de la encuesta
         const surveys = await getSurveys()
         const currentSurvey = surveys.find(s => s.id === parseInt(id))
         

@@ -26,7 +26,8 @@ function Sidebar() {
     { path: '/dashboard/surveys', label: 'Encuestas', icon: FileCheck },
     { path: '/dashboard/upload', label: 'Subir Archivos', icon: Upload },
     { path: '/dashboard/settings', label: 'Configuración', icon: Settings },
-    { path: '/dashboard/files', label: 'Ver Archivos', icon: FolderOpen  }
+    { path: '/dashboard/files', label: 'Ver Archivos', icon: FolderOpen  },
+    { path: '/dashboard/questions', label: 'Preguntas', icon: FileCheck }
   ]
 
   const indicadores = [
